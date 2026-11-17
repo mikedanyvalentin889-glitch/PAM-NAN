@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f3ed">
+  <meta name="description" content="Un petit coup de pouce pour trouver les mots justes. Suggestions de messages générées dans votre navigateur, sans compte ni API.">
+  <title>AILE — Trouve les mots justes</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f5f3ed;
+      --surface: #fffefa;
+      --ink: #20231f;
+      --muted: #73766f;
+      --line: #e4e3dc;
+      --accent: #536650;
+      --accent-dark: #3e4e3c;
+      --accent-soft: #e5e9df;
+      --sand: #e9e3d8;
+      --serif: Iowan Old Style, "Palatino Linotype", "Book Antiqua", Georgia, serif;
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --content: 1080px;
+      --gutter: clamp(20px, 5vw, 56px);
+      --shadow: 0 18px 50px rgba(37, 39, 32, .08);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font: 16px/1.55 var(--sans);
+      -webkit-font-smoothing: antialiased;
+    }
+    button, textarea, select { font: inherit; }
+    button { color: inherit; }
+    :focus-visible { outline: 3px solid #879879; outline-offset: 3px; }
+    .wrap { width: min(var(--content), calc(100% - var(--gutter) * 2)); margin-inline: auto; }
+    .topline { height: 5px; background: var(--accent); }
+    .nav { display: flex; min-height: 76px; align-items: center; justify-content: space-between; gap: 20px; border-bottom: 1px solid var(--line); }
+    .brand { display: inline-flex; align-items: center; gap: 10px; color: var(--ink); font-size: .96rem; font-weight: 780; letter-spacing: .18em; text-decoration: none; }
+    .brand-mark { display: grid; width: 31px; height: 31px; place-items: center; border: 1px solid var(--accent); border-radius: 50%; color: var(--accent); font: 1.05rem var(--serif); letter-spacing: 0; }
+    .nav-note { margin: 0; color: var(--muted); font-size: .76rem; }
+    main { padding-bottom: 72px; }
+    .intro { padding-block: clamp(46px, 8vw, 88px) 34px; }
+    .kicker { margin: 0 0 13px; color: var(--accent); font-size: .68rem; font-weight: 750; letter-spacing: .16em; text-transform: uppercase; }
+    h1, h2, p { margin-top: 0; }
+    h1 { max-width: 720px; margin-bottom: 17px; font: 400 clamp(2.8rem, 7vw, 5.7rem)/.98 var(--serif); letter-spacing: -.055em; }
+    .intro-copy { max-width: 590px; margin-bottom: 0; color: var(--muted); font-size: .94rem; }
+    .privacy-chip { display: inline-flex; align-items: center; gap: 8px; margin-top: 21px; padding: 8px 11px; border: 1px solid var(--line); border-radius: 99px; background: rgba(255,254,250,.65); color: #4c5948; font-size: .7rem; }
+    .privacy-chip span { width: 7px; height: 7px; border-radius: 50%; background: #6d8b63; }
+    .workspace { display: grid; grid-template-columns: minmax(0, 1fr) minmax(270px, .76fr); gap: 22px; align-items: start; }
+    .panel { border: 1px solid var(--line); background: var(--surface); box-shadow: var(--shadow); }
+    .form-panel { padding: clamp(21px, 4vw, 36px); }
+    .panel-heading { display: flex; align-items: start; justify-content: space-between; gap: 15px; margin-bottom: 25px; }
+    .panel-heading h2 { margin: 0; font: 400 1.8rem/1.08 var(--serif); letter-spacing: -.025em; }
+    .step { color: var(--muted); font-size: .7rem; white-space: nowrap; }
+    .field { margin-bottom: 21px; }
+    .field label, .field-label { display: block; margin-bottom: 8px; font-size: .76rem; font-weight: 700; }
+    .optional { color: var(--muted); font-weight: 400; }
+    textarea, select {
+      width: 100%;
+      border: 1px solid #d9dbd2;
+      border-radius: 3px;
+      background: #fff;
+      color: var(--ink);
+    }
+    textarea { min-height: 128px; padding: 13px 14px; resize: vertical; font-size: .83rem; line-height: 1.55; }
+    textarea::placeholder { color: #9a9c94; }
+    select { min-height: 44px; padding: 0 12px; font-size: .82rem; }
+    .hint { margin: 7px 0 0; color: var(--muted); font-size: .68rem; }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    .button {
+      display: inline-flex;
+      min-height: 47px;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 0 19px;
+      border: 1px solid var(--accent);
+      border-radius: 2px;
+      background: var(--accent);
+      color: #fff;
+      font-size: .79rem;
+      font-weight: 680;
+      cursor: pointer;
+      transition: background .18s ease, transform .18s ease;
+    }
+    .button:hover { transform: translateY(-1px); background: var(--accent-dark); }
+    .generate { width: 100%; margin-top: 1px; }
+    .fine-print { margin: 12px 0 0; color: var(--muted); font-size: .66rem; text-align: center; }
+    .results-panel { min-height: 480px; padding: clamp(21px, 4vw, 30px); background: #eeece4; box-shadow: none; }
+    .results-top { display: flex; align-items: start; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+    .results-top h2 { margin: 0; font: 400 1.65rem/1.1 var(--serif); letter-spacing: -.025em; }
+    .results-label { margin: 0 0 8px; color: var(--accent); font-size: .64rem; font-weight: 750; letter-spacing: .13em; text-transform: uppercase; }
+    .results-subtitle { margin: 0 0 20px; color: var(--muted); font-size: .74rem; }
+    .empty-state { display: grid; min-height: 335px; place-items: center; padding: 24px; border: 1px dashed #c9cabe; text-align: center; }
+    .empty-icon { display: grid; width: 49px; height: 49px; margin: 0 auto 15px; place-items: center; border-radius: 50%; background: #e1e4da; color: var(--accent); font: 1.5rem var(--serif); }
+    .empty-state h3 { margin-bottom: 7px; font: 400 1.25rem var(--serif); }
+    .empty-state p { max-width: 230px; margin: 0 auto; color: var(--muted); font-size: .74rem; }
+    .suggestions { display: grid; gap: 12px; }
+    .suggestion { padding: 15px; border: 1px solid #ddded5; background: var(--surface); }
+    .suggestion-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 9px; }
+    .suggestion-title { color: var(--accent); font-size: .65rem; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }
+    .copy-button { min-height: 29px; padding: 0 9px; border: 1px solid var(--line); border-radius: 2px; background: transparent; color: #4e5749; font-size: .66rem; cursor: pointer; }
+    .copy-button:hover { border-color: var(--accent); background: var(--accent-soft); }
+    .suggestion-text { margin: 0; white-space: pre-wrap; font-size: .83rem; line-height: 1.6; }
+    .feedback { min-height: 20px; margin: 12px 0 0; color: var(--accent-dark); font-size: .7rem; }
+    .guideline { display: grid; grid-template-columns: auto 1fr; gap: 13px; margin-top: 28px; padding: 18px 20px; border-left: 2px solid var(--accent); background: #e9e7de; }
+    .guideline-mark { color: var(--accent); font: 1.15rem var(--serif); }
+    .guideline p { margin: 0; color: #5f625b; font-size: .73rem; }
+    footer { padding-block: 19px; border-top: 1px solid var(--line); color: var(--muted); font-size: .67rem; }
+    .footer-inner { display: flex; justify-content: space-between; gap: 18px; }
+    .toast { position: fixed; right: 18px; bottom: 18px; z-index: 3; padding: 11px 15px; background: var(--ink); color: #fff; font-size: .75rem; opacity: 0; pointer-events: none; transform: translateY(8px); transition: opacity .2s, transform .2s; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    @media (max-width: 760px) {
+      .workspace { grid-template-columns: 1fr; }
+      .results-panel { min-height: 0; }
+      .empty-state { min-height: 220px; }
+    }
+    @media (max-width: 480px) {
+      .nav { min-height: 66px; }
+      .nav-note { max-width: 150px; font-size: .67rem; text-align: right; }
+      .intro { padding-top: 45px; }
+      .field-row { grid-template-columns: 1fr; gap: 0; }
+      .footer-inner { flex-direction: column; gap: 5px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="topline" aria-hidden="true"></div>
+  <header class="wrap">
+    <nav class="nav" aria-label="Navigation principale">
+      <a class="brand" href="#" aria-label="AILE, accueil"><span class="brand-mark" aria-hidden="true">A</span><span>AILE</span></a>
+      <p class="nav-note">Un coup de pouce, pas un pilote automatique.</p>
+    </nav>
+  </header>
+
+  <main class="wrap">
+    <section class="intro" aria-labelledby="pageTitle">
+      <p class="kicker">Votre wingman de poche</p>
+      <h1 id="pageTitle">Trouve les mots justes.</h1>
+      <p class="intro-copy">Une conversation te laisse sans idée ? Donne un peu de contexte et obtiens quelques pistes simples, que tu peux adapter à ta façon de parler.</p>
+      <div class="privacy-chip"><span aria-hidden="true"></span>Tout se passe dans ton navigateur — rien n'est envoyé</div>
+    </section>
+
+    <section class="workspace" aria-label="Générateur de messages">
+      <form class="panel form-panel" id="messageForm">
+        <div class="panel-heading">
+          <h2>On part de quoi ?</h2>
+          <span class="step">01 / CONTEXTE</span>
+        </div>
+        <div class="field">
+          <label for="context">La conversation ou son profil <span class="optional">(facultatif)</span></label>
+          <textarea id="context" maxlength="1200" placeholder="Ex. : Elle m'a dit qu'elle adore les randonnées et qu'elle vient de rentrer d'Italie. On a déjà parlé de voyage."></textarea>
+          <p class="hint">Évite de coller des infos privées. Quelques détails suffisent.</p>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="intent">Ce que tu veux faire</label>
+            <select id="intent">
+              <option value="opener">Lancer la conversation</option>
+              <option value="reply">Répondre à son message</option>
+              <option value="followup">Relancer sans insister</option>
+              <option value="date">Proposer de se voir</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="tone">Le ton qui te ressemble</label>
+            <select id="tone">
+              <option value="natural">Simple et naturel</option>
+              <option value="playful">Léger et taquin</option>
+              <option value="warm">Chaleureux et sincère</option>
+              <option value="direct">Direct et assuré</option>
+            </select>
+          </div>
+        </div>
+        <button class="button generate" type="submit">Me donner des idées <span aria-hidden="true">↗</span></button>
+        <p class="fine-print">Pas de compte, pas d'API, pas d'historique conservé.</p>
+      </form>
+
+      <aside class="panel results-panel" aria-labelledby="resultsTitle">
+        <div class="results-top">
+          <div>
+            <p class="results-label">À toi de jouer</p>
+            <h2 id="resultsTitle">Tes idées de message</h2>
+          </div>
+          <span class="step">02 / CHOISIS</span>
+        </div>
+        <p class="results-subtitle">Prends celle qui sonne le plus comme toi, puis ajuste-la.</p>
+        <div id="results" aria-live="polite" aria-atomic="true">
+          <div class="empty-state">
+            <div>
+              <div class="empty-icon" aria-hidden="true">✳</div>
+              <h3>Les idées arrivent ici</h3>
+              <p>Un détail précis de la conversation aide à éviter les messages passe-partout.</p>
+            </div>
+          </div>
+        </div>
+        <p class="feedback" id="feedback" role="status"></p>
+      </aside>
+    </section>
+
+    <aside class="guideline">
+      <span class="guideline-mark" aria-hidden="true">✳</span>
+      <p><strong>Le meilleur message reste le tien.</strong> AILE propose des formulations locales à partir de mots-clés du contexte — ce n'est pas une IA connectée. Sois sincère, respecte ses limites et laisse la conversation respirer si elle ne répond pas.</p>
+    </aside>
+  </main>
+
+  <footer>
+    <div class="wrap footer-inner"><span>© <span id="year"></span> AILE</span><span>Un outil de rédaction personnel, sans collecte de données.</span></div>
+  </footer>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    (() => {
+      const form = document.getElementById("messageForm");
+      const contextInput = document.getElementById("context");
+      const intentInput = document.getElementById("intent");
+      const toneInput = document.getElementById("tone");
+      const results = document.getElementById("results");
+      const feedback = document.getElementById("feedback");
+      const toast = document.getElementById("toast");
+      document.getElementById("year").textContent = new Date().getFullYear();
+
+      const topicPatterns = [
+        { pattern: /\b(randonn[ée]e?s?|montagne|marche|nature|sentier)\b/i, topic: "la randonnée" },
+        { pattern: /\b(voyage|voyager|italie|japon|espagne|portugal|week-end|vacances)\b/i, topic: "les voyages" },
+        { pattern: /\b(chat|chien|chiens|animaux|chaton)\b/i, topic: "les animaux" },
+        { pattern: /\b(caf[ée]|brunch|restaurant|cuisine|p[âa]tisserie|recette)\b/i, topic: "les bons petits restos" },
+        { pattern: /\b(musique|concert|chanson|groupe|album)\b/i, topic: "la musique" },
+        { pattern: /\b(film|s[ée]rie|cin[ée]ma|netflix)\b/i, topic: "les films et séries" },
+        { pattern: /\b(livre|lecture|roman|auteur|lire)\b/i, topic: "la lecture" },
+        { pattern: /\b(sport|course|foot|tennis|yoga|escalade)\b/i, topic: "le sport" },
+        { pattern: /\b(plage|mer|oc[ée]an|surf)\b/i, topic: "la mer" },
+        { pattern: /\b(travail|m[ée]tier|boulot|[ée]tudes|universit[ée])\b/i, topic: "son quotidien" }
+      ];
+
+      function findTopic(text) {
+        const found = topicPatterns.find((item) => item.pattern.test(text));
+        return found ? found.topic : null;
+      }
+
+      function createIdeas(intent, tone, topic, text) {
+        const detail = topic ? ` ${topic}` : null;
+        const hasMessage = text.trim().length > 0;
+        const details = {
+          opener: {
+            natural: detail
+              ? [`Tu as l'air d'aimer ${topic}. C'est quoi ton meilleur souvenir lié à ça ?`, `Petite question : qu'est-ce qui t'a donné envie de te lancer dans ${topic} ?`, `J'ai vu que tu aimais ${topic} — tu aurais une reco pour quelqu'un qui veut s'y mettre ?`]
+              : ["Salut ! J'ai eu envie de venir te parler. C'est quoi le meilleur moment de ta semaine jusque-là ?", "Question importante pour briser la glace : tu choisis plutôt un café tranquille ou une aventure improvisée ?", "Ton profil m'a donné envie d'en savoir plus. Qu'est-ce qui t'enthousiasme en ce moment ?"],
+            playful: detail
+              ? [`Débat du jour :${detail}, c'est mieux en mode improvisé ou avec un plan préparé au millimètre ?`, `J'allais trouver une super phrase d'accroche, puis j'ai vu que tu aimais ${topic}. Alors : ta reco numéro un ?`, `Sur une échelle de 1 à « j'en parle pendant trois heures », tu es à combien sur${detail} ?`]
+              : ["J'hésite entre une entrée très originale et un simple salut. Je tente le simple : salut 🙂", "Question pour vérifier notre compatibilité : petit-déj sucré ou salé ?", "Je cherche une bonne excuse pour démarrer la conversation. Tu m'aides : quelle est ta passion du moment ?"],
+            warm: detail
+              ? [`J'aime bien rencontrer des gens qui apprécient ${topic}. Qu'est-ce que tu préfères là-dedans ?`, `Ça m'a fait sourire de voir ${topic} dans ton profil. Qu'est-ce qui te plaît le plus dans cette activité ?`, `Tu as l'air passionnée par ${topic}. Je serais curieux de savoir comment ça a commencé pour toi.`]
+              : ["Salut, ton profil a l'air vraiment sympa. Qu'est-ce que tu aimes faire quand tu as un peu de temps pour toi ?", "Je me suis dit que j'allais plutôt venir te parler que chercher la phrase parfaite. Comment se passe ta journée ?", "Tu dégages une bonne énergie sur ton profil. C'est quoi un petit truc qui te met toujours de bonne humeur ?"],
+            direct: detail
+              ? [`J'aimerais bien en savoir plus sur${detail}. Tu me racontes comment tu as découvert ça ?`, `Tu as l'air d'aimer ${topic}. On échange nos meilleures recommandations ?`, `Je suis curieux à propos de${detail}. Tu me donnes ta meilleure anecdote ?`]
+              : ["Salut, tu m'as intrigué. Ça te dit qu'on fasse connaissance ?", "Je trouve ton profil intéressant et j'aimerais bien discuter avec toi. Ta semaine se passe comment ?", "Je vais faire simple : tu as l'air cool. Qu'est-ce qui t'occupe en ce moment ?"]
+          },
+          reply: {
+            natural: hasMessage ? ["Ah oui, je vois ce que tu veux dire. Qu'est-ce qui t'a le plus plu là-dedans ?", "J'aime bien ta façon de voir les choses. Raconte, comment ça s'est passé ?", "Je ne connaissais pas ça sous cet angle. C'est quoi la suite de l'histoire ?"] : ["Tu peux coller son dernier message, et je te proposerai des réponses plus adaptées.", "Il me manque juste ce qu'elle t'a dit pour t'aider à répondre naturellement.", "Ajoute son message ou un peu de contexte pour obtenir une réponse qui colle à la conversation."],
+            playful: hasMessage ? ["Ok, je reconnais que tu marques un point 😄 Et maintenant, j'ai besoin de connaître la suite.", "Je ne m'attendais pas à cette réponse — dans le bon sens du terme. Raconte-moi !", "Je vais devoir vérifier cette théorie autour d'un café un jour 😄 Mais d'abord, explique-moi :"] : ["Colle son dernier message et je t'aide à trouver une réponse avec un peu de répartie.", "Pour une réponse taquine qui tombe juste, j'ai besoin de voir ce qu'elle a dit.", "Donne-moi son message et je te prépare une réponse légère, sans forcer."],
+            warm: hasMessage ? ["Merci de me raconter ça. Qu'est-ce que tu as ressenti sur le moment ?", "Ça a l'air d'avoir compté pour toi. J'aimerais bien en savoir un peu plus.", "Je comprends mieux, merci pour le partage. Et qu'est-ce qui te ferait plaisir pour la suite ?"] : ["Partage son message pour que je puisse t'aider à lui répondre avec attention.", "Ajoute quelques mots sur ce qu'elle vient de dire pour une réponse plus personnelle.", "Colle le dernier échange, sans détails privés, et on trouvera une réponse qui sonne juste."],
+            direct: hasMessage ? ["J'aime bien discuter avec toi. Ça te dirait qu'on continue cette conversation autour d'un verre ?", "Je vois. Et toi, tu aurais envie de faire quoi pour la suite ?", "Ça me parle. On devrait continuer cette discussion en vrai, tu en dis quoi ?"] : ["Mets son dernier message pour que la réponse soit claire et adaptée.", "Ajoute un peu de contexte et je te donne une réponse directe, sans tourner autour du pot.", "Pour éviter une réponse à côté, partage ce qu'elle vient de t'écrire."]
+          },
+          followup: {
+            natural: ["Salut, je repensais à notre discussion. J'espère que ta semaine se passe bien 🙂", "Petit coucou sans pression — comment se passe ta semaine ?", "Je reviens prendre des nouvelles. Tu as fait quelque chose de sympa récemment ?"],
+            playful: ["Je repasse par ici avant que notre conversation ne devienne une légende urbaine 😄 Comment tu vas ?", "Petit contrôle qualité : ta semaine mérite combien sur 10 pour l'instant ?", "Je tente une relance légère : quoi de neuf dans ton monde ?"],
+            warm: ["Coucou, j'espère que tout va bien de ton côté. Ça me ferait plaisir d'avoir de tes nouvelles quand tu auras le temps.", "Je voulais juste prendre de tes nouvelles. J'espère que tu passes une bonne semaine.", "Aucun stress pour répondre, je voulais simplement te souhaiter une belle journée 🙂"],
+            direct: ["Salut, ça me ferait plaisir de reprendre notre conversation. Tu es dispo cette semaine ?", "Je suis toujours partant pour faire connaissance si ça te dit. Comment tu vas ?", "Je te relance une fois, sans pression. Si tu as envie de discuter, je suis là."]
+          },
+          date: {
+            natural: ["Ça te dirait de continuer cette conversation autour d'un café cette semaine ?", "J'aime bien discuter avec toi. On prend un verre un de ces jours ?", "Tu serais partante pour une balade ou un café ce week-end ?"],
+            playful: ["On a assez parlé de nos talents respectifs par messages. Ça te dit de vérifier ça autour d'un café ? 😄", "Je propose un test grandeur nature de notre conversation : un verre cette semaine ?", "Ça mérite une conversation en vrai, non ? Café ou balade, tu préfères ?"],
+            warm: ["J'apprécie nos échanges. Si tu en as envie, ça me ferait plaisir de te rencontrer autour d'un café.", "Je passe un bon moment à discuter avec toi. Ça te dirait qu'on se voie cette semaine, sans pression ?", "Est-ce que ça te ferait plaisir qu'on se retrouve pour une petite balade ou un café ?"],
+            direct: ["J'aimerais bien te rencontrer. Tu es libre pour un verre jeudi ou vendredi ?", "Tu me plais bien. Ça te dirait un café cette semaine ?", "On continue cette conversation en vrai ? Je suis dispo ce week-end si ça te tente."]
+          }
+        };
+        const variants = details[intent][tone];
+        const offset = topic ? (topic.length + text.length) % variants.length : text.length % variants.length;
+        return [variants[offset], variants[(offset + 1) % variants.length], variants[(offset + 2) % variants.length]];
+      }
+
+      function renderIdeas(ideas) {
+        const labels = ["Simple", "Autre option", "Pour varier"];
+        const list = document.createElement("div");
+        list.className = "suggestions";
+        ideas.forEach((idea, index) => {
+          const card = document.createElement("article");
+          card.className = "suggestion";
+          const header = document.createElement("div");
+          header.className = "suggestion-head";
+          const label = document.createElement("span");
+          label.className = "suggestion-title";
+          label.textContent = labels[index];
+          const copy = document.createElement("button");
+          copy.className = "copy-button";
+          copy.type = "button";
+          copy.textContent = "Copier";
+          copy.setAttribute("aria-label", `Copier le message : ${idea}`);
+          copy.addEventListener("click", () => copyIdea(idea));
+          const text = document.createElement("p");
+          text.className = "suggestion-text";
+          text.textContent = idea;
+          header.append(label, copy);
+          card.append(header, text);
+          list.append(card);
+        });
+        results.replaceChildren(list);
+      }
+
+      async function copyIdea(idea) {
+        try {
+          await navigator.clipboard.writeText(idea);
+          feedback.textContent = "Message copié. Pense à le personnaliser avant de l'envoyer.";
+        } catch (error) {
+          feedback.textContent = "Copie impossible dans ce navigateur. Sélectionne le texte pour le copier.";
+        }
+      }
+
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        feedback.textContent = "";
+        const text = contextInput.value.trim();
+        const topic = findTopic(text);
+        const ideas = createIdeas(intentInput.value, toneInput.value, topic, text);
+        renderIdeas(ideas);
+      });
+    })();
+  </script>
+</body>
+</html>
