@@ -3,7 +3,7 @@ main = "worker.js"
 compatibility_date = "2026-11-17"
 
 [vars]
-ALLOWED_ORIGIN = "https://YOUR-USERNAME.github.io"
+ALLOWED_ORIGIN = "https://mikedanyvalentin889-glitch.github.io"
 
 [[ratelimits]]
 name = "WINGMATE_RATE_LIMITER"
