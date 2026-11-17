@@ -1,0 +1,14 @@
+name = "wingmate-api"
+main = "worker.js"
+compatibility_date = "2026-11-17"
+
+[vars]
+ALLOWED_ORIGIN = "https://YOUR-USERNAME.github.io"
+
+[[ratelimits]]
+name = "WINGMATE_RATE_LIMITER"
+namespace_id = "81727403"
+
+  [ratelimits.simple]
+  limit = 10
+  period = 60
